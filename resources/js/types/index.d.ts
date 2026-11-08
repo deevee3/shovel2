@@ -1,0 +1,316 @@
+import { InertiaLinkProps } from '@inertiajs/react';
+import { LucideIcon } from 'lucide-react';
+
+export interface Auth {
+    user: User;
+}
+
+export interface BreadcrumbItem {
+    title: string;
+    href: string;
+}
+
+export interface NavGroup {
+    title: string;
+    items: NavItem[];
+}
+
+export interface NavItem {
+    title: string;
+    href?: NonNullable<InertiaLinkProps['href']>;
+    icon?: LucideIcon | null;
+    isActive?: boolean;
+    items?: NavItem[];
+}
+
+export interface SharedData {
+    name: string;
+    quote: { message: string; author: string };
+    auth: Auth;
+    sidebarOpen: boolean;
+    permissions?: string[] | null;
+    agentToken?: {
+        expires_at: string | null;
+    } | null;
+    [key: string]: unknown;
+}
+
+export interface LatestMessageSummary {
+    id: number;
+    sender_type: string;
+    content: string;
+    confidence?: number | null;
+    metadata?: Record<string, unknown> | null;
+    created_at: string | null;
+}
+
+export interface ConversationSummary {
+    id: number;
+    subject: string | null;
+    status: string;
+    priority: string;
+    last_activity_at: string | null;
+    requester: {
+        type: string | null;
+        identifier: string | null;
+    };
+    latest_message: LatestMessageSummary | null;
+}
+
+export interface ConversationDetail extends ConversationSummary {
+    metadata: Record<string, unknown> | null;
+}
+
+export interface QueueItemPayload {
+    id: number;
+    queue_id: number;
+    state: string;
+    enqueued_at: string | null;
+    dequeued_at: string | null;
+    metadata: Record<string, unknown> | null;
+    conversation: ConversationSummary | null;
+}
+
+export interface ConversationMessage {
+    id: number;
+    sender_type: string;
+    content: string;
+    confidence?: number | null;
+    metadata?: Record<string, unknown> | null;
+    created_at: string | null;
+    user: {
+        id: number;
+        name: string | null;
+    } | null;
+}
+
+export interface ConversationQueueItem extends QueueItemPayload {
+    queue?: {
+        id: number;
+        name: string;
+    } | null;
+}
+
+export interface ConversationAssignment {
+    id: number;
+    status: string;
+    assigned_at: string | null;
+    accepted_at: string | null;
+    released_at: string | null;
+    resolved_at: string | null;
+    metadata: Record<string, unknown> | null;
+    user: {
+        id: number;
+        name: string | null;
+        email: string | null;
+        roles: Array<{
+            id: number;
+            name: string;
+            slug: string;
+        }>;
+        skills: Array<{
+            id: number;
+            name: string;
+            level: string | null;
+        }>;
+        queues: Array<{
+            id: number;
+            name: string;
+        }>;
+    } | null;
+    queue: {
+        id: number;
+        name: string | null;
+    } | null;
+}
+
+export interface ConversationHandoff {
+    id: number;
+    direction: string;
+    direction_label: string;
+    reason_code: string;
+    confidence?: number | null;
+    policy_hits?: Record<string, unknown> | null;
+    required_skills?: Record<string, unknown> | null;
+    metadata?: Record<string, unknown> | null;
+    created_at: string | null;
+    user: {
+        id: number;
+        name: string | null;
+    } | null;
+}
+
+export interface ConversationAuditEvent {
+    id: number;
+    event_type: string;
+    payload: Record<string, unknown> | null;
+    channel: string | null;
+    occurred_at: string | null;
+    user: {
+        id: number;
+        name: string | null;
+    } | null;
+    subject: {
+        type: string;
+        id: number;
+    } | null;
+}
+
+export interface AuditEventUserSummary {
+    id: number;
+    name: string | null;
+    email: string | null;
+    username: string | null;
+}
+
+export interface AuditEventRecord {
+    id: number;
+    event_type: string;
+    conversation_id: number | null;
+    user_id: number | null;
+    user: AuditEventUserSummary | null;
+    subject_type: string | null;
+    subject_id: number | null;
+    subject?: {
+        type: string;
+        id: number;
+    } | null;
+    payload: Record<string, unknown> | null;
+    channel: string | null;
+    occurred_at: string | null;
+    created_at: string | null;
+}
+
+export interface PaginatedAuditEventResponse {
+    data: AuditEventRecord[];
+    meta: {
+        filters: {
+            conversation_id: number | null;
+            event_type: string | null;
+            occurred_from: string | null;
+            occurred_to: string | null;
+            actor: string | null;
+        };
+        pagination: {
+            current_page: number;
+            per_page: number;
+            total: number;
+            last_page: number;
+        };
+    };
+}
+
+export interface PaginatedQueueItemsResponse {
+    data: QueueItemPayload[];
+    meta: {
+        pagination: {
+            current_page: number;
+            per_page: number;
+            total: number;
+            last_page: number;
+        };
+        filters: {
+            state: string | null;
+        };
+    };
+}
+
+export interface QueueSummary {
+    id: number;
+    name: string;
+    is_default?: boolean;
+}
+
+export interface User {
+    id: number;
+    name: string;
+    email: string;
+    avatar?: string;
+    subscribed?: boolean;
+    email_verified_at: string | null;
+    created_at: string;
+    updated_at: string;
+    [key: string]: unknown; // This allows for additional properties...
+}
+
+declare global {
+    var route: (name?: string, params?: any, absolute?: boolean) => string;
+}
+
+export interface ApiKeyUserSummary {
+    id: number;
+    name: string;
+    email: string;
+}
+
+export interface ApiKey {
+    id: number;
+    name: string;
+    active: boolean;
+    scopes: string[];
+    expires_at: string | null;
+    last_used_at: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+    metadata: Record<string, unknown>;
+    user: ApiKeyUserSummary | null;
+}
+
+export interface PaginatedApiKeyResponse {
+    data: ApiKey[];
+    meta: {
+        pagination: {
+            current_page: number;
+            per_page: number;
+            total: number;
+            last_page: number;
+        };
+        filters: {
+            search: string | null;
+            active: boolean | null;
+        };
+    };
+    plain_text_key?: string;
+}
+
+export interface Webhook {
+    id: number;
+    name: string;
+    url: string;
+    events: string[];
+    active: boolean;
+    metadata: Record<string, unknown> | null;
+    secret_last_four?: string | null;
+    masked_secret?: string | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+}
+
+export interface PaginatedWebhookResponse {
+    data: Webhook[];
+    meta: {
+        pagination: {
+            current_page: number;
+            per_page: number;
+            total: number;
+            last_page: number;
+        };
+        filters: {
+            search: string | null;
+            active: boolean | null;
+            event: string | null;
+        };
+        available_events: string[];
+    };
+    plain_text_secret?: string | null;
+}
+
+declare module '*.png' {
+    const src: string;
+    export default src;
+}
+
+export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
+    auth: Auth;
+    [key: string]: unknown;
+};

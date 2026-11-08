@@ -1,0 +1,192 @@
+<?php
+
+use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\HandoffPolicyController;
+use App\Http\Controllers\Admin\KbArticleController;
+use App\Http\Controllers\Admin\OrganizationController;
+use App\Http\Controllers\Admin\QueueController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SkillController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WebhookController;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+use Laravel\WorkOS\Http\Middleware\ValidateSessionWithWorkOS;
+
+$adminMiddleware = array_filter([
+    'auth',
+    app()->environment('local', 'testing') ? null : ValidateSessionWithWorkOS::class,
+    // TODO: Add admin permission middleware
+]);
+
+Route::middleware($adminMiddleware)->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', function () {
+        return Inertia::render('admin/dashboard');
+    })->name('dashboard');
+
+    Route::get('/api', function () {
+        return Inertia::render('admin/api/index');
+    })->name('api.index');
+
+    // Users & Roles Management
+    Route::get('/users', function () {
+        return Inertia::render('admin/users/index');
+    })->name('users.index');
+
+    Route::get('/users/{user}', [UserController::class, 'showProfile'])->name('users.show');
+
+    // Users API endpoints
+    Route::prefix('api/users')->name('api.users.')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('index');
+        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::get('/{user}', [UserController::class, 'show'])->name('show');
+        Route::put('/{user}', [UserController::class, 'update'])->name('update');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
+        Route::post('/{user}/skills', [UserController::class, 'syncSkills'])->name('sync-skills');
+        Route::post('/{user}/avatar', [UserController::class, 'updateAvatar'])->name('update-avatar');
+        Route::get('/{user}/resource-management', [UserController::class, 'resourceManagement'])->name('resource-management');
+    });
+
+    Route::get('/roles', function () {
+        return Inertia::render('admin/roles/index');
+    })->name('roles.index');
+
+    Route::get('/roles/{role}', [RoleController::class, 'showProfile'])->name('roles.show');
+
+    // Roles API endpoints
+    Route::prefix('api/roles')->name('api.roles.')->group(function () {
+        Route::get('/', [RoleController::class, 'index'])->name('index');
+        Route::get('/all', [RoleController::class, 'all'])->name('all');
+        Route::post('/', [RoleController::class, 'store'])->name('store');
+        Route::get('/{role}', [RoleController::class, 'show'])->name('show');
+        Route::put('/{role}', [RoleController::class, 'update'])->name('update');
+        Route::delete('/{role}', [RoleController::class, 'destroy'])->name('destroy');
+    });
+
+    // Permissions API endpoints
+    Route::prefix('api/permissions')->name('api.permissions.')->group(function () {
+        Route::get('/all', function () {
+            return response()->json([
+                'data' => \App\Models\Permission::orderBy('name')->get(),
+            ]);
+        })->name('all');
+    });
+
+    // Skills Management
+    Route::get('/skills', function () {
+        return Inertia::render('admin/skills/index');
+    })->name('skills.index');
+
+    Route::get('/skills/{skill}', [SkillController::class, 'showProfile'])->name('skills.show');
+
+    // Skills API endpoints
+    Route::prefix('api/skills')->name('api.skills.')->group(function () {
+        Route::get('/', [SkillController::class, 'index'])->name('index');
+        Route::get('/all', [SkillController::class, 'all'])->name('all');
+        Route::post('/', [SkillController::class, 'store'])->name('store');
+        Route::get('/{skill}', [SkillController::class, 'show'])->name('show');
+        Route::put('/{skill}', [SkillController::class, 'update'])->name('update');
+        Route::delete('/{skill}', [SkillController::class, 'destroy'])->name('destroy');
+    });
+
+    // Queues Management
+    Route::get('/queues', function () {
+        return Inertia::render('admin/queues/index');
+    })->name('queues.index');
+
+    // Queues API endpoints
+    Route::prefix('api/queues')->name('api.queues.')->group(function () {
+        Route::get('/', [QueueController::class, 'index'])->name('index');
+        Route::get('/all', [QueueController::class, 'all'])->name('all');
+        Route::post('/', [QueueController::class, 'store'])->name('store');
+        Route::get('/{queue}', [QueueController::class, 'show'])->name('show');
+        Route::put('/{queue}', [QueueController::class, 'update'])->name('update');
+        Route::delete('/{queue}', [QueueController::class, 'destroy'])->name('destroy');
+        Route::post('/{queue}/users', [QueueController::class, 'assignUsers'])->name('assign-users');
+        Route::delete('/{queue}/users/{userId}', [QueueController::class, 'unassignUser'])->name('unassign-user');
+    });
+
+    // Handoff Policies Management
+    Route::get('/handoff-policies', function () {
+        return Inertia::render('admin/handoff-policies/index');
+    })->name('handoff-policies.index');
+
+    // AI Persona Management
+    Route::get('/persona', function () {
+        return Inertia::render('admin/persona/index');
+    })->name('persona.index');
+
+    Route::prefix('api/handoff-policies')->name('api.handoff-policies.')->group(function () {
+        Route::get('/', [HandoffPolicyController::class, 'index'])->name('index');
+        Route::post('/', [HandoffPolicyController::class, 'store'])->name('store');
+        Route::get('/{handoffPolicy}', [HandoffPolicyController::class, 'show'])->name('show');
+        Route::put('/{handoffPolicy}', [HandoffPolicyController::class, 'update'])->name('update');
+        Route::delete('/{handoffPolicy}', [HandoffPolicyController::class, 'destroy'])->name('destroy');
+    });
+
+    // API Keys Management
+    Route::get('/api-keys', function () {
+        return Inertia::render('admin/api-keys/index');
+    })->name('api-keys.index');
+
+    Route::prefix('api/api-keys')->name('api.api-keys.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ApiKeyController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\ApiKeyController::class, 'store'])->name('store');
+        Route::put('/{apiKey}', [\App\Http\Controllers\Admin\ApiKeyController::class, 'update'])->name('update');
+        Route::delete('/{apiKey}', [\App\Http\Controllers\Admin\ApiKeyController::class, 'destroy'])->name('destroy');
+    });
+
+    // Webhooks Management
+    Route::get('/webhooks', function () {
+        return Inertia::render('admin/webhooks/index');
+    })->name('webhooks.index');
+
+    Route::prefix('api/webhooks')->name('api.webhooks.')->group(function () {
+        Route::get('/', [WebhookController::class, 'index'])->name('index');
+        Route::post('/', [WebhookController::class, 'store'])->name('store');
+        Route::get('/{webhook}', [WebhookController::class, 'show'])->name('show');
+        Route::put('/{webhook}', [WebhookController::class, 'update'])->name('update');
+        Route::delete('/{webhook}', [WebhookController::class, 'destroy'])->name('destroy');
+        Route::post('/{webhook}/test', [WebhookController::class, 'test'])->name('test');
+    });
+
+    // Analytics
+    Route::get('/analytics', function () {
+        return Inertia::render('admin/analytics/index');
+    })->name('analytics.index');
+
+    Route::prefix('api/analytics')->name('api.analytics.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AnalyticsController::class, 'index'])->name('index');
+    });
+
+    // Audit Logs
+    Route::get('/audit-logs', function () {
+        return Inertia::render('admin/audit-logs/index');
+    })->name('audit-logs.index');
+
+    Route::prefix('api/audit-logs')->name('api.audit-logs.')->group(function () {
+        Route::get('/', [AuditLogController::class, 'index'])->name('index');
+    });
+
+    // Knowledge Base Management
+    Route::get('/kb', [KbArticleController::class, 'index'])->name('kb.index');
+    Route::prefix('kb')->name('kb.')->group(function () {
+        Route::post('/', [KbArticleController::class, 'store'])->name('store');
+        Route::put('/{kb_article}', [KbArticleController::class, 'update'])->name('update');
+        Route::delete('/{kb_article}', [KbArticleController::class, 'destroy'])->name('destroy');
+        Route::post('/{kb_article}/reindex', [KbArticleController::class, 'reindex'])->name('reindex');
+        Route::post('/search', [KbArticleController::class, 'search'])->name('search');
+    });
+
+    // Organization (Team) Management
+    Route::get('/organization', [OrganizationController::class, 'index'])->name('organizations.index');
+    Route::get('/organization/create', [OrganizationController::class, 'create'])->name('organizations.create');
+    Route::post('/organization', [OrganizationController::class, 'store'])->name('organizations.store');
+    Route::put('/organization', [OrganizationController::class, 'update'])->name('organizations.update');
+    Route::post('/organization/invite', [OrganizationController::class, 'invite'])->name('organizations.invite');
+    Route::delete('/organization/invitations/{invitation}', [OrganizationController::class, 'cancelInvitation'])->name('organizations.invitations.cancel');
+    Route::delete('/organization/members/{member}', [OrganizationController::class, 'removeMember'])->name('organizations.members.remove');
+    Route::put('/organization/members/{member}/role', [OrganizationController::class, 'updateMemberRole'])->name('organizations.members.update-role');
+    Route::post('/organization/switch/{organization}', [OrganizationController::class, 'switch'])->name('organizations.switch');
+    Route::get('/api/organizations', [OrganizationController::class, 'listUserOrganizations'])->name('api.organizations.list');
+});
